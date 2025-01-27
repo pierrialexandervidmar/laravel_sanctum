@@ -21,7 +21,7 @@ class ClientController extends Controller
         }
 
         $clients = Client::paginate($perPage);
-        
+
         // Retorna a resposta JSON com os dados de paginação e os recursos formatados
         return response()->json([
             'data' => ClientResource::collection($clients), // Dados dos clientes
@@ -39,7 +39,18 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email:rfc', 'unique:clients,email'],
+            'phone' => ['required', 'string', 'min:10', 'max:15'],
+        ]);
+
+        $client = Client::create($validatedData);
+
+        return response()->json([
+            'message' => 'Cliente adicionado com sucesso',
+            'data' => new ClientResource($client)
+        ], 201);
     }
 
     /**
@@ -47,7 +58,17 @@ class ClientController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $client = Client::find($id);
+
+        if (!$client) {
+            return response()->json([
+               'message' => 'Cliente não encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => new ClientResource($client)
+        ], 200);
     }
 
     /**
@@ -55,7 +76,26 @@ class ClientController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validatedData = $request->validate([
+            'name' => ['string', 'max:255'],
+            'email' => ['string', 'email:rfc'],
+            'phone' => ['string', 'min:10', 'max:15'],
+        ]);
+
+        $client = Client::find($id);
+
+        if (!$client) {
+            return response()->json([
+               'message' => 'Cliente não encontrado'
+            ], 404);
+        }
+
+        $client->update($validatedData);
+
+        return response()->json([
+            'message' => 'Cliente atualizado com sucesso',
+            'data' => new ClientResource($client)
+        ], 200);        
     }
 
     /**
@@ -63,6 +103,18 @@ class ClientController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $client = Client::find($id);
+
+        if (!$client) {
+            return response()->json([
+               'message' => 'Cliente não encontrado'
+            ], 404);
+        }
+
+        $client->delete();
+
+        return response()->json([
+           'message' => 'Cliente excluído com sucesso'
+        ], 204);
     }
 }
